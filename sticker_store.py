@@ -18,12 +18,27 @@ class StickerStore:
         self.plugin = plugin
 
     @property
+    def root(self) -> Path:
+        """Where the inventory lives.
+
+        Empty ``gallery_dir`` keeps the historical layout (the plugin data
+        directory). A configured value must be an absolute path — it is
+        normalized on save, so a relative one never reaches here.
+        """
+        configured = str(
+            (getattr(self.plugin, "_qq_settings", {}) or {}).get("gallery_dir") or ""
+        ).strip()
+        if configured:
+            return Path(configured)
+        return Path(self.plugin.data_path())
+
+    @property
     def index(self) -> Path:
-        return Path(self.plugin.data_path("sticker.json"))
+        return self.root / "sticker.json"
 
     @property
     def directory(self) -> Path:
-        return Path(self.plugin.data_path("sticker"))
+        return self.root / "sticker"
 
     def read(self) -> dict:
         try:
