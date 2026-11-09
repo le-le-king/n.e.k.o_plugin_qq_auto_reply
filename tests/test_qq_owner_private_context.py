@@ -9,6 +9,7 @@
 """
 from __future__ import annotations
 
+import os
 from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import AsyncMock
@@ -244,7 +245,8 @@ def test_strip_removes_section_with_its_separator():
 
 def test_sticker_store_uses_default_layout_when_unset():
     data = Path("C:/neko-test-data")
-    plugin = SimpleNamespace(_qq_settings={}, data_path=lambda *a: data)
+    # 宿主/替身的 data_path 都至少收一个位置参数：无参调用会在 CI 的替身上炸掉
+    plugin = SimpleNamespace(_qq_settings={}, data_path=lambda name: data / name)
     store = StickerStore(plugin)
     assert store.root == data
     assert store.index == data / "sticker.json"
@@ -254,7 +256,7 @@ def test_sticker_store_uses_default_layout_when_unset():
 def test_sticker_store_follows_gallery_dir():
     data = Path("C:/neko-test-data")
     target = Path("C:/neko-test-library")
-    plugin = SimpleNamespace(_qq_settings={"gallery_dir": str(target)}, data_path=lambda *a: data)
+    plugin = SimpleNamespace(_qq_settings={"gallery_dir": str(target)}, data_path=lambda name: data / name)
     store = StickerStore(plugin)
     assert store.root == target
     assert store.index == target / "sticker.json"
@@ -271,7 +273,8 @@ def test_gallery_dir_rejects_relative_paths():
 def test_gallery_dir_normalizes_and_clears():
     plugin = _plugin()
     service = QQSettingsService(plugin)
-    target = Path("C:/neko-test-library")
+    # 用平台自带的绝对路径：Windows 的 "C:/..." 在 Linux CI 上不是绝对路径
+    target = Path(os.path.abspath("neko-test-library"))
     service._apply_gallery_dir(f'  "{target}"  ')
     assert plugin._qq_settings["gallery_dir"] == str(target)
     service._apply_gallery_dir("")

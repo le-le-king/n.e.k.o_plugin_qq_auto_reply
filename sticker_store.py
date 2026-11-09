@@ -30,7 +30,9 @@ class StickerStore:
         ).strip()
         if configured:
             return Path(configured)
-        return Path(self.plugin.data_path())
+        # ``data_path`` 在宿主里是 "数据目录 + 名字" 的拼接器；传空名拿到目录本身。
+        # 不传参调用会打破只接受一个位置参数的替身（测试里就是这么写的）。
+        return Path(self.plugin.data_path(""))
 
     @property
     def index(self) -> Path:
